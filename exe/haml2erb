@@ -1,0 +1,113 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "optparse"
+require_relative "../lib/haml2erb"
+
+# CLI class for haml2erb
+class CLI
+  def initialize
+    @options = {}
+  end
+
+  def run(args = ARGV) # rubocop:todo Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
+    parse_options(args)
+
+    if @options[:help]
+      puts help_message
+      return
+    end
+
+    if @options[:version]
+      puts "haml2erb #{Haml2erb::VERSION}"
+      return
+    end
+
+    input_file = args.first
+    output_file = @options[:output]
+
+    if input_file.nil?
+      if $stdin.tty?
+        warn "Error: No input file specified and no input from stdin"
+        warn help_message
+        exit 1
+      else
+        # Read from stdin
+        input_content = $stdin.read
+        process_conversion(input_content, output_file)
+      end
+    else
+      # Read from file
+      unless File.exist?(input_file)
+        warn "Error: File '#{input_file}' not found"
+        exit 1
+      end
+
+      input_content = File.read(input_file)
+      output_file ||= input_file.gsub(/\.haml$/, ".erb")
+      process_conversion(input_content, output_file)
+    end
+  end
+
+  private
+
+  def parse_options(args) # rubocop:todo Metrics/MethodLength
+    OptionParser.new do |opts|
+      opts.banner = "Usage: haml2erb [OPTIONS] [INPUT_FILE]"
+      opts.separator ""
+      opts.separator "Convert HAML files to ERB format"
+      opts.separator ""
+      opts.separator "Options:"
+
+      opts.on("-o", "--output FILE", "Output file (default: INPUT_FILE.erb or stdout)") do |file|
+        @options[:output] = file
+      end
+
+      opts.on("-h", "--help", "Show this help message") do
+        @options[:help] = true
+      end
+
+      opts.on("-v", "--version", "Show version") do
+        @options[:version] = true
+      end
+    end.parse!(args)
+  end
+
+  def process_conversion(input_content, output_file)
+    erb_content = Haml2erb.convert(input_content)
+
+    if output_file && output_file != "-"
+      File.write(output_file, erb_content)
+      warn "Converted to #{output_file}"
+    else
+      puts erb_content
+    end
+  rescue StandardError => e
+    warn "Error: #{e.message}"
+    exit 1
+  end
+
+  def help_message
+    <<~HELP
+      Usage: haml2erb [OPTIONS] [INPUT_FILE]
+
+      Convert HAML files to ERB format
+
+      Arguments:
+        INPUT_FILE    HAML file to convert (reads from stdin if not specified)
+
+      Options:
+        -o, --output FILE    Output file (default: INPUT_FILE.erb or stdout)
+        -h, --help           Show this help message
+        -v, --version        Show version
+
+      Examples:
+        haml2erb app.haml                    # Convert app.haml to app.erb
+        haml2erb app.haml -o template.erb    # Convert app.haml to template.erb
+        cat app.haml | haml2erb              # Convert from stdin to stdout
+        haml2erb app.haml -o -               # Convert app.haml to stdout
+    HELP
+  end
+end
+
+CLI.new.run(ARGV)
