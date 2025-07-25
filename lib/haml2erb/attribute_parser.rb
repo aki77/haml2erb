@@ -77,10 +77,14 @@ module Haml2erb
         parse_old_format_numeric(match)
       elsif (match = attr.match(/(['"])([a-zA-Z_-][a-zA-Z0-9_-]*)\1\s*:\s*(['"])(.*?)\3/))
         parse_new_format_quoted(match)
+      elsif (match = attr.match(/(['"])([a-zA-Z_-][a-zA-Z0-9_-]*)\1\s*:\s*(true|false)/))
+        parse_new_format_boolean(match)
       elsif (match = attr.match(/(['"])([a-zA-Z_-][a-zA-Z0-9_-]*)\1\s*:\s*([a-zA-Z_][a-zA-Z0-9_.:()]+)/))
         parse_new_format_code(match)
       elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_-]*)\s*:\s*(['"])(.*?)\2/))
         parse_symbol_quoted(match)
+      elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_-]*)\s*:\s*(true|false)/))
+        parse_symbol_boolean(match)
       elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_-]*)\s*:\s*([a-zA-Z_@:][a-zA-Z0-9_.()@:\[\]&]+)/))
         parse_symbol_code(match)
       elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_-]*)\s*:\s*(\d+)/))
@@ -106,6 +110,16 @@ module Haml2erb
       " #{normalize_key(key)}=\"#{value}\""
     end
 
+    def parse_new_format_boolean(match)
+      _, key, value = match.captures
+      # HTML boolean attributes: if true, output attribute name only; if false, omit attribute
+      if value == "true"
+        " #{normalize_key(key)}"
+      else
+        ""
+      end
+    end
+
     def parse_new_format_code(match)
       _, key, value = match.captures
       " #{normalize_key(key)}=\"<%= #{value} %>\""
@@ -124,6 +138,16 @@ module Haml2erb
     def parse_symbol_numeric(match)
       key, value = match.captures
       " #{key}=\"#{value}\""
+    end
+
+    def parse_symbol_boolean(match)
+      key, value = match.captures
+      # HTML boolean attributes: if true, output attribute name only; if false, omit attribute
+      if value == "true"
+        " #{key}"
+      else
+        ""
+      end
     end
 
     def format_attribute(key, value)

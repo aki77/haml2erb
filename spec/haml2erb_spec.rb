@@ -505,6 +505,12 @@ RSpec.describe Haml2erb do
       expected = "<tr data-test-id=\"test_<%= id %>\"></tr>\n"
       expect(Haml2erb.convert(haml)).to eq(expected)
     end
+
+    it "handles iconify-icon with inline attribute" do
+      haml = "%iconify-icon{ inline: true }"
+      expected = "<iconify-icon inline></iconify-icon>\n"
+      expect(Haml2erb.convert(haml)).to eq(expected)
+    end
   end
 end
 # rubocop:enable Metrics/BlockLength
