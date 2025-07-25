@@ -511,6 +511,18 @@ RSpec.describe Haml2erb do
       expected = "<iconify-icon inline></iconify-icon>\n"
       expect(Haml2erb.convert(haml)).to eq(expected)
     end
+
+    it "handles class selector with Ruby output directly after =" do
+      haml = ".text-pre-wrap= t('some.key', default: 'Default text')"
+      expected = "<div class=\"text-pre-wrap\"><%= t('some.key', default: 'Default text') %></div>\n"
+      expect(Haml2erb.convert(haml)).to eq(expected)
+    end
+
+    it "handles element with class selector and Ruby output" do
+      haml = "%h2.mb-4= t('another.key', default: 'Another default')"
+      expected = "<h2 class=\"mb-4\"><%= t('another.key', default: 'Another default') %></h2>\n"
+      expect(Haml2erb.convert(haml)).to eq(expected)
+    end
   end
 end
 # rubocop:enable Metrics/BlockLength

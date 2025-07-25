@@ -150,7 +150,10 @@ module Haml2erb
           class_attr = classes.join(" ")
           all_attributes = " class=\"#{class_attr}\"#{additional_attributes}"
 
-          if content && !content.empty? && !@has_children
+          if content.start_with?("=")
+            ruby_code = content[1..].strip
+            "#{@indent}<div#{all_attributes}><%= #{ruby_code} %></div>\n"
+          elsif content && !content.empty? && !@has_children
             processed_content = process_interpolation(content)
             "#{@indent}<div#{all_attributes}>#{processed_content}</div>\n"
           elsif !@has_children
@@ -160,14 +163,32 @@ module Haml2erb
           end
         else
           # Fallback to original logic
-          parts = rest.split(" ", 2)
-          class_spec = parts[0]
-          content = parts[1]
+          # Find where class spec ends - could be before =, space, or {
+          class_end_match = rest.match(/^([^=\s{]+)(.*)/)
+          if class_end_match
+            class_spec = class_end_match[1]
+            remaining = class_end_match[2]
+
+            # Check if the remaining starts with =
+            if remaining.start_with?("=")
+              content = remaining
+            else
+              parts = remaining.split(" ", 2)
+              content = parts[0] && parts[0].empty? ? parts[1] : remaining.strip
+            end
+          else
+            parts = rest.split(" ", 2)
+            class_spec = parts[0]
+            content = parts[1]
+          end
 
           classes = class_spec.split(".").reject(&:empty?)
           class_attr = classes.join(" ")
 
-          if content && !content.empty? && !@has_children
+          if content&.start_with?("=")
+            ruby_code = content[1..].strip
+            "#{@indent}<div class=\"#{class_attr}\"><%= #{ruby_code} %></div>\n"
+          elsif content && !content.empty? && !@has_children
             processed_content = process_interpolation(content)
             "#{@indent}<div class=\"#{class_attr}\">#{processed_content}</div>\n"
           else
@@ -175,15 +196,33 @@ module Haml2erb
           end
         end
       else
-        parts = rest.split(" ", 2)
-        class_spec = parts[0]
-        content = parts[1]
+        # Find where class spec ends - could be before =, space, or {
+        class_end_match = rest.match(/^([^=\s{]+)(.*)/)
+        if class_end_match
+          class_spec = class_end_match[1]
+          remaining = class_end_match[2]
+
+          # Check if the remaining starts with =
+          if remaining.start_with?("=")
+            content = remaining
+          else
+            parts = remaining.split(" ", 2)
+            content = parts[0] && parts[0].empty? ? parts[1] : remaining.strip
+          end
+        else
+          parts = rest.split(" ", 2)
+          class_spec = parts[0]
+          content = parts[1]
+        end
 
         # Convert .class1.class2.class3 to separate classes
         classes = class_spec.split(".").reject(&:empty?)
         class_attr = classes.join(" ")
 
-        if content && !content.empty? && !@has_children
+        if content&.start_with?("=")
+          ruby_code = content[1..].strip
+          "#{@indent}<div class=\"#{class_attr}\"><%= #{ruby_code} %></div>\n"
+        elsif content && !content.empty? && !@has_children
           processed_content = process_interpolation(content)
           "#{@indent}<div class=\"#{class_attr}\">#{processed_content}</div>\n"
         else
