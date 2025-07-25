@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "string_utils"
+
 module Haml2erb
   # Parses HAML attributes and converts them to HTML
   class AttributeParser # rubocop:todo Metrics/ClassLength
@@ -27,36 +29,8 @@ module Haml2erb
     # rubocop:todo Metrics/PerceivedComplexity
     # rubocop:todo Metrics/MethodLength
     # rubocop:todo Metrics/AbcSize
-    def smart_split_attributes(attr_string) # rubocop:todo Metrics/CyclomaticComplexity, Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
-      result = []
-      current_attr = ""
-      in_quote = false
-      quote_char = nil
-      i = 0
-
-      while i < attr_string.length
-        char = attr_string[i]
-
-        if !in_quote && ['"', "'"].include?(char)
-          in_quote = true
-          quote_char = char
-          current_attr += char
-        elsif in_quote && char == quote_char
-          in_quote = false
-          quote_char = nil
-          current_attr += char
-        elsif !in_quote && char == ","
-          result << current_attr
-          current_attr = ""
-        else
-          current_attr += char
-        end
-
-        i += 1
-      end
-
-      result << current_attr unless current_attr.empty?
-      result
+    def smart_split_attributes(attr_string)
+      StringUtils.smart_split(attr_string, ",")
     end
     # rubocop:enable Metrics/AbcSize
     # rubocop:enable Metrics/MethodLength
@@ -75,19 +49,19 @@ module Haml2erb
         parse_old_format_string(match)
       elsif (match = attr.match(/:([a-zA-Z_][a-zA-Z0-9_-]*)\s*=>\s*(\d+)/))
         parse_old_format_numeric(match)
-      elsif (match = attr.match(/(['"])([a-zA-Z_-][a-zA-Z0-9_-]*)\1\s*:\s*(['"])(.*?)\3/))
+      elsif (match = attr.match(/(['"])([a-zA-Z_-][a-zA-Z0-9_:-]*)\1\s*:\s*(['"])(.*?)\3/))
         parse_new_format_quoted(match)
-      elsif (match = attr.match(/(['"])([a-zA-Z_-][a-zA-Z0-9_-]*)\1\s*:\s*(true|false)/))
+      elsif (match = attr.match(/(['"])([a-zA-Z_-][a-zA-Z0-9_:-]*)\1\s*:\s*(true|false)/))
         parse_new_format_boolean(match)
-      elsif (match = attr.match(/(['"])([a-zA-Z_-][a-zA-Z0-9_-]*)\1\s*:\s*([a-zA-Z_][a-zA-Z0-9_.:()]+)/))
+      elsif (match = attr.match(/(['"])([a-zA-Z_-][a-zA-Z0-9_:-]*)\1\s*:\s*([a-zA-Z_][a-zA-Z0-9_.:()]+)/))
         parse_new_format_code(match)
-      elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_-]*)\s*:\s*(['"])(.*?)\2/))
+      elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*(['"])(.*?)\2/))
         parse_symbol_quoted(match)
-      elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_-]*)\s*:\s*(true|false)/))
+      elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*(true|false)/))
         parse_symbol_boolean(match)
-      elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_-]*)\s*:\s*([a-zA-Z_@:][a-zA-Z0-9_.()@:\[\]&]+)/))
+      elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*([a-zA-Z_@:][a-zA-Z0-9_.()@:\[\]&]+)/))
         parse_symbol_code(match)
-      elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_-]*)\s*:\s*(\d+)/))
+      elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*(\d+)/))
         parse_symbol_numeric(match)
       end
     end
@@ -168,7 +142,7 @@ module Haml2erb
         nested_attr = nested_attr.strip
         next if nested_attr.empty?
 
-        nested_match = nested_attr.match(/([a-zA-Z_-][a-zA-Z0-9_-]*)\s*:\s*(['"])(.*?)\2/)
+        nested_match = nested_attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*(['"])(.*?)\2/)
         next unless nested_match
 
         nested_key, _, nested_value = nested_match.captures
@@ -184,57 +158,32 @@ module Haml2erb
     # rubocop:enable Metrics/MethodLength
 
     def normalize_key(key)
+      # Don't convert if key already contains hyphens (e.g., 'data-id', 'aria-label')
+      return key if key.include?("-")
+      # Convert underscores to hyphens for Ruby-style attributes
       key.include?("_") ? key.gsub("_", "-") : key
     end
 
     def convert_ruby_interpolation(value)
-      # Convert Ruby interpolation #{} to ERB format <%= %>
-      value.gsub(/\#\{([^}]+)\}/, '<%= \1 %>')
+      StringUtils.process_interpolation(value)
     end
 
     # rubocop:todo Metrics/PerceivedComplexity
     # rubocop:todo Metrics/MethodLength
     # rubocop:todo Metrics/AbcSize
-    def extract_nested_hash_attribute(attr) # rubocop:todo Metrics/CyclomaticComplexity, Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
+    def extract_nested_hash_attribute(attr)
       # Match pattern: key: { ... }
-      match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_-]*)\s*:\s*\{/)
+      match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*\{/)
       return nil unless match
 
       key = match[1]
       start_pos = match.end(0) - 1 # Position of opening brace
 
-      # Find the matching closing brace, considering nested braces and strings
-      brace_count = 0
-      in_string = false
-      string_char = nil
-      i = start_pos
+      result = StringUtils.find_closing_delimiter(attr[start_pos..], "{", "}")
+      return nil unless result
 
-      while i < attr.length
-        char = attr[i]
-
-        if !in_string
-          if ['"', "'"].include?(char)
-            in_string = true
-            string_char = char
-          elsif char == "{"
-            brace_count += 1
-          elsif char == "}"
-            brace_count -= 1
-            if brace_count.zero? # rubocop:todo Metrics/BlockNesting
-              # Found the matching closing brace
-              content = attr[start_pos + 1...i].strip
-              return [attr, key, content]
-            end
-          end
-        elsif char == string_char && (i.zero? || attr[i - 1] != "\\")
-          in_string = false
-          string_char = nil
-        end
-
-        i += 1
-      end
-
-      nil
+      content = attr[start_pos + 1...start_pos + result[:position]].strip
+      [attr, key, content]
     end
     # rubocop:enable Metrics/AbcSize
     # rubocop:enable Metrics/MethodLength

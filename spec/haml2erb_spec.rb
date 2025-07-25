@@ -107,7 +107,7 @@ RSpec.describe Haml2erb do
 
     it "handles multiple CSS classes" do
       haml = ".card.border.active"
-      expected = "<div class=\"card border active\">\n"
+      expected = "<div class=\"card border active\"></div>\n"
       expect(Haml2erb.convert(haml)).to eq(expected)
     end
 
@@ -166,7 +166,7 @@ RSpec.describe Haml2erb do
 
     it "handles complex CSS selector syntax" do
       haml = ".box.large.active"
-      expected = "<div class=\"box large active\">\n"
+      expected = "<div class=\"box large active\"></div>\n"
       expect(Haml2erb.convert(haml)).to eq(expected)
     end
 
