@@ -79,7 +79,7 @@ module Haml2erb
       return true if block_keywords.any? { |keyword| ruby_code.start_with?("#{keyword} ") || ruby_code == keyword }
 
       # Check for method calls with do blocks
-      ruby_code.include?(" do ")
+      ruby_code.include?(" do ") || ruby_code.include?(" do\n") || ruby_code.end_with?(" do")
     end
   end
 end

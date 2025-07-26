@@ -609,6 +609,53 @@ RSpec.describe Haml2erb do
         expect(Haml2erb.convert(haml)).to eq(expected)
       end
     end
+
+    context "method calls with do blocks (no space after do)" do
+      it "handles method calls where 'do' is directly followed by newline" do
+        haml = <<~HAML
+          - some_method(:arg) do
+            = content
+        HAML
+        expected = <<~ERB
+          <% some_method(:arg) do %>
+            <%= content %>
+          <% end %>
+        ERB
+        expect(Haml2erb.convert(haml)).to eq(expected)
+      end
+
+      it "handles I18n.with_locale block pattern" do
+        haml = <<~HAML
+          - I18n.with_locale(:en) do
+            = t('hello')
+        HAML
+        expected = <<~ERB
+          <% I18n.with_locale(:en) do %>
+            <%= t('hello') %>
+          <% end %>
+        ERB
+        expect(Haml2erb.convert(haml)).to eq(expected)
+      end
+
+      it "handles nested blocks without spaces after do" do
+        haml = <<~HAML
+          - outer_method do
+            .content
+              - inner_method do
+                = value
+        HAML
+        expected = <<~ERB
+          <% outer_method do %>
+            <div class="content">
+              <% inner_method do %>
+                <%= value %>
+              <% end %>
+            </div>
+          <% end %>
+        ERB
+        expect(Haml2erb.convert(haml)).to eq(expected)
+      end
+    end
   end
 end
 # rubocop:enable Metrics/BlockLength
