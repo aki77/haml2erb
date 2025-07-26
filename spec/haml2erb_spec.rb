@@ -523,6 +523,20 @@ RSpec.describe Haml2erb do
       expected = "<h2 class=\"mb-4\"><%= t('another.key', default: 'Another default') %></h2>\n"
       expect(Haml2erb.convert(haml)).to eq(expected)
     end
+
+    it "handles element with Ruby output followed by another element" do
+      haml = <<~HAML
+        %h2= t('views.users.sessions.new.title', default: 'ログイン')
+
+        .text-pre-wrap= tt('views.users.sessions.new.help_text')
+      HAML
+      expected = <<~ERB
+        <h2><%= t('views.users.sessions.new.title', default: 'ログイン') %></h2>
+
+        <div class="text-pre-wrap"><%= tt('views.users.sessions.new.help_text') %></div>
+      ERB
+      expect(Haml2erb.convert(haml)).to eq(expected)
+    end
   end
 end
 # rubocop:enable Metrics/BlockLength

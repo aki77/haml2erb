@@ -24,7 +24,13 @@ module Haml2erb
 
       processed_lines.each_with_index do |line, index|
         current_indent = line[/^\s*/].length
-        next_line = processed_lines[index + 1]
+
+        # Find the next non-empty line to calculate next_indent
+        next_non_empty_index = (index + 1...processed_lines.length).find do |i|
+          !processed_lines[i].strip.empty?
+        end
+
+        next_line = next_non_empty_index ? processed_lines[next_non_empty_index] : nil
         next_indent = next_line ? next_line[/^\s*/].length : 0
 
         # Handle filter content
