@@ -57,7 +57,7 @@ module Haml2erb
         parse_new_format_quoted(match)
       elsif (match = attr.match(/(['"])([a-zA-Z_-][a-zA-Z0-9_:-]*)\1\s*:\s*(true|false)/))
         parse_new_format_boolean(match)
-      elsif (match = attr.match(/(['"])([a-zA-Z_-][a-zA-Z0-9_:-]*)\1\s*:\s*([a-zA-Z_][a-zA-Z0-9_.:()]+)/))
+      elsif (match = attr.match(/(['"])([a-zA-Z_-][a-zA-Z0-9_:-]*)\1\s*:\s*(.+)$/))
         parse_new_format_code(match)
       elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*(['"])(.*?)\2/))
         parse_symbol_quoted(match)
@@ -68,8 +68,8 @@ module Haml2erb
       elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*:([a-zA-Z_][a-zA-Z0-9_]*)\b/))
         # Handle symbol values like type: :hidden
         parse_symbol_value(match)
-      elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*([a-zA-Z_@][a-zA-Z0-9_.()@:\[\]&]+|[A-Z][a-zA-Z0-9_]*::[A-Z][a-zA-Z0-9_\[\]&.]*)/))
-        # Handle code values including constants with :: and array access
+      elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*(.+)$/))
+        # Handle any remaining code values as-is
         parse_symbol_code(match)
       end
     end
@@ -202,12 +202,7 @@ module Haml2erb
       if (match = attr.match(/^([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*(.+)$/))
         key, value = match.captures
         # Check if the value contains parentheses - likely a method call
-        if value.include?("(") && value.include?(")")
-          " #{normalize_key(key)}=\"<%= #{value} %>\""
-        else
-          # Not a method call, return nil to let other parsers handle it
-          nil
-        end
+        " #{normalize_key(key)}=\"<%= #{value} %>\"" if value.include?("(") && value.include?(")")
       end
     end
 

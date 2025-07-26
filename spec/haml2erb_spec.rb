@@ -583,6 +583,32 @@ RSpec.describe Haml2erb do
         expect(Haml2erb.convert(haml)).to eq(expected)
       end
     end
+
+    context "logical operators in attribute values" do
+      it "handles || operator in attribute values" do
+        haml = "%div{ class: user.admin? || 'guest' }"
+        expected = "<div class=\"<%= user.admin? || 'guest' %>\"></div>\n"
+        expect(Haml2erb.convert(haml)).to eq(expected)
+      end
+
+      it "handles complex conditional expressions" do
+        haml = "%span{ title: user.active? && user.verified? ? 'Active User' : 'Inactive' }"
+        expected = "<span title=\"<%= user.active? && user.verified? ? 'Active User' : 'Inactive' %>\"></span>\n"
+        expect(Haml2erb.convert(haml)).to eq(expected)
+      end
+
+      it "handles comparison operators in attributes" do
+        haml = "%div{ 'data-visible': count > 0 && count < 10 }"
+        expected = "<div data-visible=\"<%= count > 0 && count < 10 %>\"></div>\n"
+        expect(Haml2erb.convert(haml)).to eq(expected)
+      end
+
+      it "handles negation operator in expressions" do
+        haml = "%p{ class: !user.guest? && 'member' }"
+        expected = "<p class=\"<%= !user.guest? && 'member' %>\"></p>\n"
+        expect(Haml2erb.convert(haml)).to eq(expected)
+      end
+    end
   end
 end
 # rubocop:enable Metrics/BlockLength

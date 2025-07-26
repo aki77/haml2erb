@@ -82,6 +82,7 @@ module Haml2erb
       in_quote = false
       quote_char = nil
       paren_depth = 0
+      bracket_depth = 0
       i = 0
 
       while i < text.length
@@ -101,7 +102,26 @@ module Haml2erb
         elsif !in_quote && char == ")"
           paren_depth -= 1
           current_part += char
-        elsif !in_quote && paren_depth.zero? && char == delimiter
+        elsif !in_quote && char == "<"
+          # Don't count as bracket depth if it's part of a comparison operator
+          # Check if next char is =, or if previous char is = (for <=, >=)
+          next_char = i + 1 < text.length ? text[i + 1] : nil
+          prev_char = i > 0 ? text[i - 1] : nil
+
+          unless next_char == "=" || prev_char == "=" || next_char == " " || (i + 1 < text.length && text[i + 1].match?(/[0-9a-zA-Z_]/))
+            bracket_depth += 1
+          end
+          current_part += char
+        elsif !in_quote && char == ">"
+          # Similar check for >
+          next_char = i + 1 < text.length ? text[i + 1] : nil
+          prev_char = i > 0 ? text[i - 1] : nil
+
+          unless prev_char == "=" || prev_char == " " || (i > 0 && text[i - 1].match?(/[0-9a-zA-Z_]/))
+            bracket_depth -= 1
+          end
+          current_part += char
+        elsif !in_quote && paren_depth.zero? && bracket_depth.zero? && char == delimiter
           result << current_part
           current_part = ""
         else
