@@ -26,15 +26,9 @@ module Haml2erb
 
     private
 
-    # rubocop:todo Metrics/PerceivedComplexity
-    # rubocop:todo Metrics/MethodLength
-    # rubocop:todo Metrics/AbcSize
     def smart_split_attributes(attr_string)
       StringUtils.smart_split(attr_string, ",")
     end
-    # rubocop:enable Metrics/AbcSize
-    # rubocop:enable Metrics/MethodLength
-    # rubocop:enable Metrics/PerceivedComplexity
 
     # rubocop:todo Metrics/PerceivedComplexity
     # rubocop:todo Metrics/MethodLength
@@ -160,6 +154,7 @@ module Haml2erb
     def normalize_key(key)
       # Don't convert if key already contains hyphens (e.g., 'data-id', 'aria-label')
       return key if key.include?("-")
+
       # Convert underscores to hyphens for Ruby-style attributes
       key.include?("_") ? key.gsub("_", "-") : key
     end
@@ -168,9 +163,6 @@ module Haml2erb
       StringUtils.process_interpolation(value)
     end
 
-    # rubocop:todo Metrics/PerceivedComplexity
-    # rubocop:todo Metrics/MethodLength
-    # rubocop:todo Metrics/AbcSize
     def extract_nested_hash_attribute(attr)
       # Match pattern: key: { ... }
       match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*\{/)
@@ -185,8 +177,5 @@ module Haml2erb
       content = attr[start_pos + 1...start_pos + result[:position]].strip
       [attr, key, content]
     end
-    # rubocop:enable Metrics/AbcSize
-    # rubocop:enable Metrics/MethodLength
-    # rubocop:enable Metrics/PerceivedComplexity
   end
 end

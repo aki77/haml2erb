@@ -22,7 +22,7 @@ module Haml2erb
 
     private
 
-    def parse_attributes_to_hash(attributes_string)
+    def parse_attributes_to_hash(attributes_string) # rubocop:todo Metrics/MethodLength
       hash = {}
       return hash if attributes_string.empty?
 
@@ -36,13 +36,14 @@ module Haml2erb
         key = key[0] if key.is_a?(Array)
         # Skip if this was already parsed as key="value"
         next if hash.key?(key)
+
         hash[key] = true
       end
 
       hash
     end
 
-    def merge_hashes(base, additional)
+    def merge_hashes(base, additional) # rubocop:todo Metrics/MethodLength
       merged = base.dup
 
       additional.each do |key, value|
@@ -71,10 +72,10 @@ module Haml2erb
       # Ensure styles end with semicolon
       base = base_styles.to_s.strip
       additional = additional_styles.to_s.strip
-      
+
       base += ";" unless base.empty? || base.end_with?(";")
       additional += ";" unless additional.empty? || additional.end_with?(";")
-      
+
       "#{base} #{additional}".strip
     end
 

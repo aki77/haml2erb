@@ -4,7 +4,7 @@ require_relative "string_utils"
 
 module Haml2erb
   # Parses HAML element tags and extracts components
-  class TagParser
+  class TagParser # rubocop:todo Metrics/ClassLength
     # Data structure to hold parsed tag information
     TagInfo = Struct.new(:tag_name, :classes, :ids, :attributes_hash, :content, :has_ruby_code) do
       def initialize(*)
@@ -43,7 +43,8 @@ module Haml2erb
       @line.match?(/^[%#.]/)
     end
 
-    def parse_element_tag
+    # rubocop:todo Metrics/MethodLength
+    def parse_element_tag # rubocop:todo Metrics/AbcSize, Metrics/MethodLength
       match = @line.match(/^%([a-zA-Z0-9_-]+)(.*)$/)
       return nil unless match
 
@@ -52,9 +53,7 @@ module Haml2erb
       remaining = match[2]
 
       # Parse classes and IDs
-      if remaining.start_with?(".") || remaining.start_with?("#")
-        remaining = parse_class_id_spec(remaining, tag_info)
-      end
+      remaining = parse_class_id_spec(remaining, tag_info) if remaining.start_with?(".") || remaining.start_with?("#")
 
       # Parse attributes hash
       if remaining.strip.start_with?("{")
@@ -70,8 +69,10 @@ module Haml2erb
 
       tag_info
     end
+    # rubocop:enable Metrics/MethodLength
 
-    def parse_class_shorthand
+    # rubocop:todo Metrics/MethodLength
+    def parse_class_shorthand # rubocop:todo Metrics/AbcSize, Metrics/MethodLength
       tag_info = TagInfo.new
       tag_info.tag_name = "div"
       remaining = @line
@@ -94,6 +95,7 @@ module Haml2erb
       parse_content(remaining.strip, tag_info)
       tag_info
     end
+    # rubocop:enable Metrics/MethodLength
 
     def parse_id_shorthand
       tag_info = TagInfo.new
@@ -109,7 +111,7 @@ module Haml2erb
       tag_info
     end
 
-    def parse_class_id_spec(spec, tag_info)
+    def parse_class_id_spec(spec, tag_info) # rubocop:todo Metrics/MethodLength
       remaining = ""
       current_spec = spec
 

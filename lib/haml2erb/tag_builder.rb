@@ -11,7 +11,6 @@ module Haml2erb
       area base br col embed hr img input link meta
       param source track wbr
     ].freeze
-
     def self.build(tag_info, indent, has_children)
       new(tag_info, indent, has_children).build
     end
@@ -22,7 +21,7 @@ module Haml2erb
       @has_children = has_children
     end
 
-    def build
+    def build # rubocop:todo Metrics/MethodLength
       attributes = build_attributes
       tag_name = @tag_info.tag_name
 
@@ -61,7 +60,7 @@ module Haml2erb
       attrs.empty? ? "" : " #{attrs.join(" ")}"
     end
 
-    def merge_attributes(base_attrs, additional_attrs)
+    def merge_attributes(base_attrs, additional_attrs) # rubocop:todo Metrics/CyclomaticComplexity, Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
       return base_attrs if additional_attrs.empty?
 
       # Convert array to hash for easier manipulation
@@ -85,11 +84,12 @@ module Haml2erb
 
       # Also parse boolean attributes (attribute name only)
       # Skip any words that are inside ERB tags <%= ... %>
-      temp_attrs = additional_attrs.gsub(/<%=.*?%>/, '')
+      temp_attrs = additional_attrs.gsub(/<%=.*?%>/, "")
       temp_attrs.scan(/(?:^|\s)([\w-]+)(?=\s|$)/) do |attr|
         attr = attr[0] if attr.is_a?(Array)
         # Skip if this attribute already has a value
         next if attrs_hash.key?(attr)
+
         attrs_hash[attr] = true
       end
 

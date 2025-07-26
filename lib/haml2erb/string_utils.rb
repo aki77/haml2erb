@@ -36,7 +36,10 @@ module Haml2erb
 
     # Find the position of closing delimiter considering quotes and nesting
     # Returns { position: index } or nil
-    def find_closing_delimiter(text, open_delim, close_delim)
+    # rubocop:todo Metrics/PerceivedComplexity
+    # rubocop:todo Metrics/MethodLength
+    # rubocop:todo Metrics/AbcSize
+    def find_closing_delimiter(text, open_delim, close_delim) # rubocop:todo Metrics/CyclomaticComplexity, Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
       delimiter_count = 0
       in_quote = false
       quote_char = nil
@@ -65,9 +68,15 @@ module Haml2erb
 
       nil
     end
+    # rubocop:enable Metrics/AbcSize
+    # rubocop:enable Metrics/MethodLength
+    # rubocop:enable Metrics/PerceivedComplexity
 
     # Split string by delimiter considering quotes
-    def smart_split(text, delimiter = ",")
+    # rubocop:todo Metrics/PerceivedComplexity
+    # rubocop:todo Metrics/MethodLength
+    # rubocop:todo Metrics/AbcSize
+    def smart_split(text, delimiter = ",") # rubocop:todo Metrics/CyclomaticComplexity, Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
       result = []
       current_part = ""
       in_quote = false
@@ -98,5 +107,8 @@ module Haml2erb
       result << current_part unless current_part.empty?
       result
     end
+    # rubocop:enable Metrics/AbcSize
+    # rubocop:enable Metrics/MethodLength
+    # rubocop:enable Metrics/PerceivedComplexity
   end
 end
