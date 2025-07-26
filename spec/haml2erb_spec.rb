@@ -537,6 +537,52 @@ RSpec.describe Haml2erb do
       ERB
       expect(Haml2erb.convert(haml)).to eq(expected)
     end
+
+    context "method calls with colon-based arguments in attributes" do
+      it "handles method calls with keyword arguments containing colons" do
+        haml = "%div{ data: generate_path(type: :user, id: 123) }"
+        expected = "<div data=\"<%= generate_path(type: :user, id: 123) %>\"></div>\n"
+        expect(Haml2erb.convert(haml)).to eq(expected)
+      end
+
+      it "does not split method arguments at colons" do
+        haml = "%a{ href: url_for(controller: :posts, action: :show, id: @post.id) }"
+        expected = "<a href=\"<%= url_for(controller: :posts, action: :show, id: @post.id) %>\"></a>\n"
+        expect(Haml2erb.convert(haml)).to eq(expected)
+      end
+
+      it "preserves parentheses content as a single unit" do
+        haml = "%img{ src: image_url('photo.jpg', size: :thumb, quality: 80) }"
+        expected = "<img src=\"<%= image_url('photo.jpg', size: :thumb, quality: 80) %>\">\n"
+        expect(Haml2erb.convert(haml)).to eq(expected)
+      end
+
+      it "handles nested braces within method calls" do
+        haml = "%form{ action: form_path(user: { name: @user.name, role: :admin }), method: :post }"
+        expected = "<form action=\"<%= form_path(user: { name: @user.name, role: :admin }) %>\" " \
+                   "method=\"post\"></form>\n"
+        expect(Haml2erb.convert(haml)).to eq(expected)
+      end
+
+      it "handles multiple method calls in attributes" do
+        haml = "%div{ id: dom_id(@user, :profile), class: css_classes(active: true) }"
+        expected = "<div id=\"<%= dom_id(@user, :profile) %>\" class=\"<%= css_classes(active: true) %>\"></div>\n"
+        expect(Haml2erb.convert(haml)).to eq(expected)
+      end
+
+      it "preserves commas within method arguments" do
+        haml = "%link{ href: asset_path('style.css', host: 'cdn.example.com', protocol: :https) }"
+        expected = "<link href=\"<%= asset_path('style.css', host: 'cdn.example.com', protocol: :https) %>\">\n"
+        expect(Haml2erb.convert(haml)).to eq(expected)
+      end
+
+      it "handles method calls with trailing options" do
+        haml = "%script{ src: javascript_include_tag('app', defer: true, async: false), type: 'module' }"
+        expected = "<script src=\"<%= javascript_include_tag('app', defer: true, async: false) %>\" " \
+                   "type=\"module\"></script>\n"
+        expect(Haml2erb.convert(haml)).to eq(expected)
+      end
+    end
   end
 end
 # rubocop:enable Metrics/BlockLength

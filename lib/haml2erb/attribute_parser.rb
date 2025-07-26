@@ -36,6 +36,16 @@ module Haml2erb
     def process_attribute(attr) # rubocop:todo Metrics/CyclomaticComplexity, Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
       return nil if attr.empty?
 
+      # Check for method call pattern FIRST (has highest priority)
+      if attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*[a-zA-Z_][a-zA-Z0-9_.]*\(.*\)/)
+        return parse_method_call_attribute(attr)
+      end
+
+      # Check for constant access pattern (e.g., Test::NAMES[...])
+      if attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*[A-Z][a-zA-Z0-9_]*(::[A-Z][a-zA-Z0-9_]*)*/)
+        return parse_constant_access(attr)
+      end
+
       # Handle nested hash attributes like data: { test_id: 'test' }
       if (match = extract_nested_hash_attribute(attr))
         parse_nested_hash(match)
@@ -53,10 +63,14 @@ module Haml2erb
         parse_symbol_quoted(match)
       elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*(true|false)/))
         parse_symbol_boolean(match)
-      elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*([a-zA-Z_@:][a-zA-Z0-9_.()@:\[\]&]+)/))
-        parse_symbol_code(match)
       elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*(\d+)/))
         parse_symbol_numeric(match)
+      elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*:([a-zA-Z_][a-zA-Z0-9_]*)\b/))
+        # Handle symbol values like type: :hidden
+        parse_symbol_value(match)
+      elsif (match = attr.match(/([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*([a-zA-Z_@][a-zA-Z0-9_.()@:\[\]&]+|[A-Z][a-zA-Z0-9_]*::[A-Z][a-zA-Z0-9_\[\]&.]*)/))
+        # Handle code values including constants with :: and array access
+        parse_symbol_code(match)
       end
     end
     # rubocop:enable Metrics/AbcSize
@@ -118,6 +132,11 @@ module Haml2erb
       end
     end
 
+    def parse_symbol_value(match)
+      key, value = match.captures
+      " #{normalize_key(key)}=\"#{value}\""
+    end
+
     def format_attribute(key, value)
       " #{key}=\"#{value}\""
     end
@@ -176,6 +195,28 @@ module Haml2erb
 
       content = attr[start_pos + 1...start_pos + result[:position]].strip
       [attr, key, content]
+    end
+
+    def parse_method_call_attribute(attr)
+      # Match pattern: key: method_name(args)
+      if (match = attr.match(/^([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*(.+)$/))
+        key, value = match.captures
+        # Check if the value contains parentheses - likely a method call
+        if value.include?("(") && value.include?(")")
+          " #{normalize_key(key)}=\"<%= #{value} %>\""
+        else
+          # Not a method call, return nil to let other parsers handle it
+          nil
+        end
+      end
+    end
+
+    def parse_constant_access(attr)
+      # Match pattern: key: Constant::CONSTANT[...] or similar
+      if (match = attr.match(/^([a-zA-Z_-][a-zA-Z0-9_:-]*)\s*:\s*(.+)$/))
+        key, value = match.captures
+        " #{normalize_key(key)}=\"<%= #{value} %>\""
+      end
     end
   end
 end

@@ -10,6 +10,10 @@ GEM
     date (3.4.1)
     diff-lcs (1.6.2)
     erb (5.0.2)
+    haml (6.3.0)
+      temple (>= 0.8.2)
+      thor
+      tilt
     io-console (0.8.1)
     irb (1.15.2)
       pp (>= 0.6.0)
@@ -67,6 +71,9 @@ GEM
       prism (~> 1.4)
     ruby-progressbar (1.13.0)
     stringio (3.1.7)
+    temple (0.10.4)
+    thor (1.4.0)
+    tilt (2.6.1)
     unicode-display_width (3.1.4)
       unicode-emoji (~> 4.0, >= 4.0.4)
     unicode-emoji (4.0.4)
@@ -76,6 +83,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  haml (~> 6.3)
   haml2erb!
   irb
   rake (~> 13.0)

@@ -72,7 +72,7 @@ module Haml2erb
     # rubocop:enable Metrics/MethodLength
     # rubocop:enable Metrics/PerceivedComplexity
 
-    # Split string by delimiter considering quotes
+    # Split string by delimiter considering quotes and parentheses
     # rubocop:todo Metrics/PerceivedComplexity
     # rubocop:todo Metrics/MethodLength
     # rubocop:todo Metrics/AbcSize
@@ -81,6 +81,7 @@ module Haml2erb
       current_part = ""
       in_quote = false
       quote_char = nil
+      paren_depth = 0
       i = 0
 
       while i < text.length
@@ -90,11 +91,17 @@ module Haml2erb
           in_quote = true
           quote_char = char
           current_part += char
-        elsif in_quote && char == quote_char
+        elsif in_quote && char == quote_char && (i.zero? || text[i - 1] != "\\")
           in_quote = false
           quote_char = nil
           current_part += char
-        elsif !in_quote && char == delimiter
+        elsif !in_quote && char == "("
+          paren_depth += 1
+          current_part += char
+        elsif !in_quote && char == ")"
+          paren_depth -= 1
+          current_part += char
+        elsif !in_quote && paren_depth.zero? && char == delimiter
           result << current_part
           current_part = ""
         else
